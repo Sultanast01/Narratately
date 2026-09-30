@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Narrately">
+<title>Narrately — Any document, read aloud</title>
+<style>
+  :root {
+    --bg: #fdfcfb; --card: #ffffff; --text: #201c1a; --muted: #7a7169;
+    --border: #e8e2da; --accent: #a8562f; --accent-bg: #fbeee5; --accent2: #2f6b5e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17151a; --card: #201d22; --text: #f2ede8; --muted: #a89f97;
+      --border: #34302f; --accent: #e0925f; --accent-bg: #3a281f; --accent2: #6fcbb5;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17151a; --card: #201d22; --text: #f2ede8; --muted: #a89f97;
+    --border: #34302f; --accent: #e0925f; --accent-bg: #3a281f; --accent2: #6fcbb5;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, system-ui, sans-serif;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    max-width: 640px; margin: 0 auto; line-height: 1.5;
+  }
+  .hero { text-align: center; padding: 22px 8px 18px; }
+  .hero h1 { font-size: 26px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .hero .tag { font-size: 14px; color: var(--muted); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  select, input[type=file], button {
+    width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); font-size: 15px; margin-bottom: 10px;
+  }
+  input[type=range] { width: 100%; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; margin-bottom: 0; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border: none; font-weight: 600; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #status { font-size: 13px; color: var(--muted); min-height: 18px; }
+  #chunkText { font-size: 16px; min-height: 90px; padding: 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; white-space: pre-wrap; }
+  #progress { font-size: 13px; color: var(--muted); text-align: center; margin-top: 4px; }
+  .speedval { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+  .bookItem { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .bookItem:last-child { border-bottom: none; }
+  .bookInfo { flex: 1; cursor: pointer; }
+  .bookTitle { font-weight: 600; font-size: 15px; }
+  .bookMeta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .delBtn { background: none; border: none; color: var(--muted); font-size: 18px; width: auto; padding: 4px 8px; margin: 0; }
+  .emptyMsg { color: var(--muted); font-size: 14px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="hero">
+  <h1>📖 Narrately</h1>
+  <div class="tag">Any document. Read aloud. Free.</div>
+</div>
+
+<div id="libraryView">
+  <div class="card">
+    <label for="fileInput">Add a book (.pdf, .docx, .txt)</label>
+    <input type="file" id="fileInput" accept=".pdf,.docx,.txt">
+    <div id="status"></div>
+    <div id="capNote" style="font-size:12px; color:var(--muted); margin-top:6px;"></div>
+    <button id="upgradeBtn" class="primary" style="display:none; margin-top:10px;">⭐ Upgrade to Pro — ₦2,000</button>
+  </div>
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <div style="font-size:13px; color:var(--muted);">My Library</div>
+      <button id="shareBtn" style="width:auto; padding:6px 12px; font-size:12px; margin:0;">🔗 Share this app</button>
+    </div>
+    <div id="libraryList"></div>
+  </div>
+</div>
+
+<div id="paywallOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:50; align-items:center; justify-content:center; padding:20px;">
+  <div class="card" style="max-width:420px; width:100%; margin:0;">
+    <div style="font-size:18px; font-weight:700; margin-bottom:6px;">You've hit the free limit 🎉</div>
+    <div style="font-size:14px; color:var(--muted); margin-bottom:14px;">
+      You've added <span id="paywallLimitNum">3</span> free books. Unlock unlimited books for ₦2,000 (one-time, on this device).
+    </div>
+    <label for="paywallEmail">Your email (for receipt)</label>
+    <input type="email" id="paywallEmail" placeholder="you@example.com">
+    <button id="payBtn" class="primary">Pay ₦2,000 to unlock</button>
+    <button id="paywallCloseBtn" style="margin-top:8px;">Maybe later</button>
+  </div>
+</div>
+
+<div id="controls" style="display:none;">
+ <div class="card">
+  <button id="backBtn" style="margin-bottom:12px;">← Back to Library</button>
+  <label for="voiceSelect">Voice</label>
+  <select id="voiceSelect"></select>
+  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); margin:-4px 0 10px;">
+    <input type="checkbox" id="allLangs" style="width:auto; margin:0;"> Show all languages (default: English only)
+  </label>
+  <div id="voiceHint" style="font-size:12px; color:var(--muted); margin:-6px 0 10px;"></div>
+
+  <label for="rate">Reading speed</label>
+  <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+  <div class="speedval"><span>0.5x</span><span id="rateVal">1.0x</span><span>2x</span></div>
+
+  <div id="chunkText">Text will appear here as it's read.</div>
+  <div id="progress"></div>
+
+  <div class="row" style="margin-top:10px;">
+    <button id="prevBtn">⏮ Prev</button>
+    <button id="playBtn" class="primary">▶ Play</button>
+    <button id="nextBtn">⏭ Next</button>
+  </div>
+  <div class="row" style="margin-top:8px;">
+    <button id="stopBtn">⏹ Stop</button>
+  </div>
+ </div>
+</div>
+
+<!-- pdf.js for PDF text extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<!-- mammoth.js for DOCX text extraction -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<!-- Paystack for the ₦2,000 unlock payment. Sign up free at paystack.com to get your key. -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+<script>
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+const statusEl = document.getElementById('status');
+const controls = document.getElementById('controls');
+const chunkTextEl = document.getElementById('chunkText');
+const progressEl = document.getElementById('progress');
+const voiceSelect = document.getElementById('voiceSelect');
+const rateInput = document.getElementById('rate');
+const rateVal = document.getElementById('rateVal');
+const playBtn = document.getElementById('playBtn');
+const stopBtn = document.getElementById('stopBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+let chunks = [];
+let idx = 0;
+let isPlaying = false;
+let currentBookId = '';
+
+function safeStorage(fn, fallback) {
+  try { return fn(); } catch (e) { return fallback; }
+}
+
+// ---- PAYWALL (Paystack) ----
+// ⚠️ Replace with YOUR real Paystack public key from paystack.com dashboard > Settings > API Keys.
+// pk_test_... keys are for testing; pk_live_... keys take real money.
+const PAYSTACK_PUBLIC_KEY = "pk_test_REPLACE_ME";
+const PRICE_NGN = 2000;
+const PAYWALL_ENABLED = false; // flip to true once you're ready to start charging
+const FREE_BOOK_LIMIT = 3; // soft free-tier cap for non-Pro users (only enforced when PAYWALL_ENABLED)
+
+function isPro() {
+  return safeStorage(() => localStorage.getItem('narrately_pro') === 'true', false);
+}
+function setPro() {
+  safeStorage(() => localStorage.setItem('narrately_pro', 'true'), null);
+}
+
+function showPaywall() {
+  document.getElementById('paywallLimitNum').textContent = FREE_BOOK_LIMIT;
+  document.getElementById('paywallOverlay').style.display = 'flex';
+}
+function hidePaywall() {
+  document.getElementById('paywallOverlay').style.display = 'none';
+}
+document.getElementById('paywallCloseBtn').addEventListener('click', hidePaywall);
+
+document.getElementById('payBtn').addEventListener('click', () => {
+  const email = document.getElementById('paywallEmail').value.trim();
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid email first — Paystack needs it for the receipt.');
+    return;
+  }
+  if (!window.PaystackPop || PAYSTACK_PUBLIC_KEY.includes('REPLACE_ME')) {
+    alert('Payment isn\'t set up yet — add your real Paystack public key in the code (search for PAYSTACK_PUBLIC_KEY).');
+    return;
+  }
+  const handler = PaystackPop.setup({
+    key: PAYSTACK_PUBLIC_KEY,
+    email: email,
+    amount: PRICE_NGN * 100, // Paystack expects kobo
+    currency: 'NGN',
+    callback: function (response) {
+      // NOTE: this only confirms Paystack's popup said success — for real fraud
+      // protection you'd verify response.reference against Paystack's API from
+      // a server. For a solo free-tier unlock, trusting the client is the
+      // pragmatic tradeoff.
+      setPro();
+      hidePaywall();
+      statusEl.textContent = 'Payment successful — unlimited books unlocked! 🎉';
+      renderLibrary();
+    },
+    onClose: function () {}
+  });
+  handler.openIframe();
+});
+
+function updateCapNote() {
+  const lib = getLibrary();
+  const count = Object.keys(lib).length;
+  const noteEl = document.getElementById('capNote');
+  const upgradeBtn = document.getElementById('upgradeBtn');
+
+  if (!PAYWALL_ENABLED) {
+    noteEl.textContent = `${count} book${count === 1 ? '' : 's'} in your library.`;
+    upgradeBtn.style.display = 'none';
+    return;
+  }
+  if (isPro()) {
+    noteEl.textContent = `⭐ Pro — unlimited books (${count} added).`;
+    upgradeBtn.style.display = 'none';
+    return;
+  }
+  noteEl.textContent = `Free plan: ${count} of ${FREE_BOOK_LIMIT} books used.` +
+    (count >= FREE_BOOK_LIMIT ? ' Upgrade for unlimited, or remove one below.' : '');
+  upgradeBtn.style.display = count >= FREE_BOOK_LIMIT ? 'block' : 'none';
+}
+
+document.getElementById('upgradeBtn').addEventListener('click', showPaywall);
+
+document.getElementById('shareBtn').addEventListener('click', async () => {
+  const url = window.location.href;
+  try {
+    if (navigator.share) { await navigator.share({ title: 'Narrately', url }); return; }
+    await navigator.clipboard.writeText(url);
+    statusEl.textContent = 'Link copied — share it with anyone!';
+  } catch (e) {
+    statusEl.textContent = "Copy this page's URL to share it.";
+  }
+});
+
+function getLibrary() {
+  return safeStorage(() => JSON.parse(localStorage.getItem('audiobook_library') || '{}'), {});
+}
+function saveLibrary(lib) {
+  return safeStorage(() => { localStorage.setItem('audiobook_library', JSON.stringify(lib)); return true; }, false);
+}
+
+function renderLibrary() {
+  updateCapNote();
+  const lib = getLibrary();
+  const ids = Object.keys(lib).sort((a, b) => (lib[b].addedAt || 0) - (lib[a].addedAt || 0));
+  const listEl = document.getElementById('libraryList');
+  if (!ids.length) {
+    listEl.innerHTML = '<div class="emptyMsg">No books yet — add one above to get started.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  ids.forEach(id => {
+    const b = lib[id];
+    const pct = b.chunks.length ? Math.round(((b.idx || 0) / b.chunks.length) * 100) : 0;
+    const row = document.createElement('div');
+    row.className = 'bookItem';
+    row.innerHTML = `
+      <div class="bookInfo">
+        <div class="bookTitle">${b.title}</div>
+        <div class="bookMeta">${b.chunks.length} chunks · ${pct}% done</div>
+      </div>
+      <button class="delBtn" data-id="${id}">🗑</button>`;
+    row.querySelector('.bookInfo').addEventListener('click', () => openBook(id));
+    row.querySelector('.delBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm(`Remove "${b.title}" from your library?`)) {
+        const lib2 = getLibrary(); delete lib2[id]; saveLibrary(lib2); renderLibrary();
+      }
+    });
+    listEl.appendChild(row);
+  });
+}
+
+function openBook(id) {
+  const lib = getLibrary();
+  const b = lib[id];
+  if (!b) return;
+  currentBookId = id;
+  chunks = b.chunks;
+  idx = b.idx || 0;
+  document.getElementById('libraryView').style.display = 'none';
+  document.getElementById('controls').style.display = 'block';
+  isPlaying = false;
+  speechSynthesis.cancel();
+  playBtn.textContent = '▶ Play';
+  showChunk();
+}
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  isPlaying = false;
+  speechSynthesis.cancel();
+  document.getElementById('controls').style.display = 'none';
+  document.getElementById('libraryView').style.display = 'block';
+  renderLibrary();
+});
+
+async function extractPdf(file) {
+  const buf = await file.arrayBuffer();
+  const doc = await pdfjsLib.getDocument({ data: buf }).promise;
+  let text = '';
+  for (let i = 1; i <= doc.numPages; i++) {
+    statusEl.textContent = `Reading page ${i} of ${doc.numPages}...`;
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+async function extractDocx(file) {
+  const buf = await file.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: buf });
+  return result.value;
+}
+
+async function extractTxt(file) {
+  return await file.text();
+}
+
+function cleanText(text) {
+  return text.replace(/-\n(?=\w)/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function chunkText(text, maxChars = 240) {
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const out = [];
+  let cur = '';
+  for (const s of sentences) {
+    if ((cur + ' ' + s).trim().length <= maxChars) {
+      cur = (cur + ' ' + s).trim();
+    } else {
+      if (cur) out.push(cur);
+      cur = s;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}
+
+let allVoices = [];
+
+function renderVoiceOptions() {
+  const showAll = document.getElementById('allLangs').checked;
+  const filtered = showAll ? allVoices : allVoices.filter(v => v.lang.toLowerCase().startsWith('en'));
+  const list = filtered.length ? filtered : allVoices;
+  voiceSelect.innerHTML = '';
+  list.forEach((v) => {
+    const opt = document.createElement('option');
+    opt.value = v.__idx;
+    opt.textContent = `${v.name} (${v.lang})`;
+    voiceSelect.appendChild(opt);
+  });
+  const hint = document.getElementById('voiceHint');
+  hint.textContent = `${list.length} voice${list.length === 1 ? '' : 's'} available. ` +
+    `Want more/better ones? Go to Settings > Accessibility > Spoken Content > Voices on your iPhone and download extra English voices (look for "Enhanced" or "Premium" quality).`;
+  const saved = safeStorage(() => localStorage.getItem('audiobook_voice'), null);
+  if (saved !== null && list.some(v => String(v.__idx) === saved)) voiceSelect.value = saved;
+}
+
+function populateVoices() {
+  const voices = speechSynthesis.getVoices();
+  if (!voices.length) return;
+  allVoices = voices.map((v, i) => ({ ...v, name: v.name, lang: v.lang, __idx: i }));
+  renderVoiceOptions();
+}
+document.getElementById('allLangs').addEventListener('change', renderVoiceOptions);
+speechSynthesis.onvoiceschanged = populateVoices;
+populateVoices();
+
+rateInput.addEventListener('input', () => {
+  rateVal.textContent = parseFloat(rateInput.value).toFixed(1) + 'x';
+  safeStorage(() => localStorage.setItem('audiobook_rate', rateInput.value), null);
+});
+const savedRate = safeStorage(() => localStorage.getItem('audiobook_rate'), null);
+if (savedRate) { rateInput.value = savedRate; rateVal.textContent = parseFloat(savedRate).toFixed(1) + 'x'; }
+
+voiceSelect.addEventListener('change', () => {
+  safeStorage(() => localStorage.setItem('audiobook_voice', voiceSelect.value), null);
+});
+
+function showChunk() {
+  chunkTextEl.textContent = chunks[idx] || '';
+  progressEl.textContent = `Chunk ${idx + 1} of ${chunks.length}`;
+  const lib = getLibrary();
+  if (lib[currentBookId]) { lib[currentBookId].idx = idx; saveLibrary(lib); }
+}
+
+function updateMediaSession() {
+  if (!('mediaSession' in navigator)) return;
+  const lib = getLibrary();
+  const title = (lib[currentBookId] && lib[currentBookId].title) || 'Narrately';
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: title,
+    artist: 'Narrately',
+    album: `Chunk ${idx + 1} of ${chunks.length}`
+  });
+  navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+}
+
+function speakCurrent() {
+  if (idx >= chunks.length) { isPlaying = false; playBtn.textContent = '▶ Play'; updateMediaSession(); return; }
+  showChunk();
+  updateMediaSession();
+  const utter = new SpeechSynthesisUtterance(chunks[idx]);
+  const voices = speechSynthesis.getVoices();
+  const v = voices[voiceSelect.value];
+  if (v) utter.voice = v;
+  utter.rate = parseFloat(rateInput.value);
+  utter.onend = () => {
+    if (isPlaying) { idx++; speakCurrent(); }
+  };
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
+}
+
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('play', () => playBtn.click());
+  navigator.mediaSession.setActionHandler('pause', () => playBtn.click());
+  navigator.mediaSession.setActionHandler('previoustrack', () => prevBtn.click());
+  navigator.mediaSession.setActionHandler('nexttrack', () => nextBtn.click());
+}
+
+playBtn.addEventListener('click', () => {
+  if (isPlaying) {
+    isPlaying = false;
+    speechSynthesis.cancel();
+    playBtn.textContent = '▶ Play';
+    updateMediaSession();
+  } else {
+    isPlaying = true;
+    playBtn.textContent = '⏸ Playing...';
+    speakCurrent();
+  }
+});
+
+stopBtn.addEventListener('click', () => {
+  isPlaying = false;
+  speechSynthesis.cancel();
+  playBtn.textContent = '▶ Play';
+  updateMediaSession();
+});
+
+prevBtn.addEventListener('click', () => {
+  isPlaying = false;
+  speechSynthesis.cancel();
+  playBtn.textContent = '▶ Play';
+  idx = Math.max(0, idx - 1);
+  showChunk();
+});
+
+nextBtn.addEventListener('click', () => {
+  isPlaying = false;
+  speechSynthesis.cancel();
+  playBtn.textContent = '▶ Play';
+  idx = Math.min(chunks.length - 1, idx + 1);
+  showChunk();
+});
+
+document.getElementById('fileInput').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (PAYWALL_ENABLED && !isPro() && Object.keys(getLibrary()).length >= FREE_BOOK_LIMIT) {
+    statusEl.textContent = `Free plan limit reached (${FREE_BOOK_LIMIT} books).`;
+    e.target.value = '';
+    showPaywall();
+    return;
+  }
+
+  statusEl.textContent = 'Extracting text...';
+
+  try {
+    let raw = '';
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (ext === 'pdf') raw = await extractPdf(file);
+    else if (ext === 'docx') raw = await extractDocx(file);
+    else raw = await extractTxt(file);
+
+    const text = cleanText(raw);
+    const bookChunks = chunkText(text);
+    const id = 'b_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+    const title = file.name.replace(/\.(pdf|docx|txt)$/i, '');
+
+    const lib = getLibrary();
+    lib[id] = { title, chunks: bookChunks, idx: 0, addedAt: Date.now() };
+    const ok = saveLibrary(lib);
+
+    e.target.value = '';
+    if (!ok) {
+      statusEl.textContent = 'Could not save — storage may be full. Try removing an old book first.';
+      return;
+    }
+    statusEl.textContent = `Added "${title}" — ${bookChunks.length} chunks.`;
+    renderLibrary();
+  } catch (err) {
+    statusEl.textContent = 'Error reading file: ' + err.message;
+  }
+});
+
+renderLibrary();
+</script>
+</body>
+</html>
