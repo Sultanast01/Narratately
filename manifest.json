@@ -1,0 +1,17 @@
+{
+  "name": "Narrately",
+  "short_name": "Narrately",
+  "start_url": "/Narrately/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#dc9a3c",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "scope": "/Narrately/",
+  "description": "A personal audiobook reader for PDF, DOCX and TXT files."
+}
