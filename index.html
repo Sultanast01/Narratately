@@ -633,13 +633,6 @@
           placeholder="At least 8 characters"
         />
         <button class="payBtn" id="authSubmit">Sign in</button>
-        <button
-          class="laterBtn"
-          id="googleBtn"
-          style="border: 1px solid var(--border); margin-bottom: 4px"
-        >
-          Continue with Google
-        </button>
         <button class="laterBtn" id="authToggle">
           New here? Create an account
         </button>
@@ -1245,19 +1238,6 @@
             gateStatus.textContent =
               "Check your email to confirm your account, then sign in.";
           }
-        });
-      document
-        .getElementById("googleBtn")
-        .addEventListener("click", async () => {
-          if (!sb) {
-            gateStatus.textContent = "The backend isn't connected yet.";
-            return;
-          }
-          const { error } = await sb.auth.signInWithOAuth({
-            provider: "google",
-            options: { redirectTo: location.origin + location.pathname },
-          });
-          if (error) gateStatus.textContent = error.message;
         });
       document
         .getElementById("signOutBtn")
