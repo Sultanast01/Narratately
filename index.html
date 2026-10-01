@@ -519,6 +519,94 @@
       .tabBtn.active {
         color: var(--accent-deep);
       }
+      .skipRow {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin: 0 0 6px;
+        flex-wrap: wrap;
+      }
+      .skipRow button {
+        background: var(--surface2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .bigCover {
+        max-width: 96px !important;
+        margin: 0 auto 12px !important;
+        font-size: 38px !important;
+      }
+      .nowMeta {
+        margin-bottom: 14px !important;
+      }
+      .readView {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        height: 32vh;
+        overflow-y: auto;
+        font-size: 17px;
+        line-height: 1.75;
+        margin-bottom: 18px;
+      }
+      .readView span {
+        cursor: pointer;
+      }
+      .readView .cur {
+        background: rgba(220, 154, 60, 0.25);
+        border-radius: 4px;
+      }
+      .readView mark {
+        background: var(--accent);
+        color: #1a1408;
+        border-radius: 3px;
+        padding: 0 1px;
+      }
+      .stars {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        margin: 4px 0 12px;
+      }
+      .stars button {
+        background: none;
+        border: none;
+        font-size: 34px;
+        line-height: 1;
+        color: var(--border);
+        cursor: pointer;
+        padding: 2px;
+      }
+      .stars button.on {
+        color: var(--accent);
+      }
+      .rateBox {
+        width: 100%;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface2);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 14px;
+        resize: vertical;
+      }
+      #rateGate {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: var(--bg);
+        z-index: 70;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
     </style>
   </head>
   <body>
@@ -528,13 +616,26 @@
         <div class="tag" style="text-align: center; margin-bottom: 22px">
           Any document, read aloud.
         </div>
-        <h3>Join the waitlist</h3>
-        <p>Pop in your email to get access — takes 10 seconds.</p>
-        <label for="gateName" style="margin-top: 0">Name</label>
-        <input type="text" id="gateName" placeholder="Your name" />
-        <label for="gateEmail">Email</label>
-        <input type="email" id="gateEmail" placeholder="you@example.com" />
-        <button class="payBtn" id="gateJoinBtn">Join the waitlist</button>
+        <h3 id="authTitle">Sign in</h3>
+        <p>Your library follows you to any device.</p>
+        <label for="authEmail" style="margin-top: 0">Email</label>
+        <input
+          type="email"
+          id="authEmail"
+          autocomplete="email"
+          placeholder="you@example.com"
+        />
+        <label for="authPass">Password</label>
+        <input
+          type="password"
+          id="authPass"
+          autocomplete="current-password"
+          placeholder="At least 8 characters"
+        />
+        <button class="payBtn" id="authSubmit">Sign in</button>
+        <button class="laterBtn" id="authToggle">
+          New here? Create an account
+        </button>
         <div
           id="gateStatus"
           style="
@@ -586,6 +687,7 @@
       <div class="nowTitle" id="nowTitle"></div>
       <div class="nowMeta" id="nowMeta"></div>
 
+      <div class="readView" id="readView" aria-live="off"></div>
       <div class="scrubRow">
         <input type="range" id="scrub" min="0" max="100" value="0" />
         <div class="scrubLabels">
@@ -607,6 +709,12 @@
             <rect x="16.5" y="5" width="2.5" height="14"></rect>
           </svg>
         </button>
+      </div>
+      <div class="skipRow">
+        <button data-sec="-900">−15 min</button>
+        <button data-sec="-10">−10 s</button>
+        <button data-sec="10">+10 s</button>
+        <button data-sec="900">+15 min</button>
       </div>
       <button class="stopLink" id="stopBtn">Stop</button>
       <div class="voiceLinkRow" id="voiceLinkRow">
@@ -687,9 +795,12 @@
         <h4>Voice & speed</h4>
         <label for="voiceSelect">Voice</label>
         <select id="voiceSelect"></select>
+        <button class="laterBtn" id="voiceTest" style="margin-top: 8px">
+          ▶ Test this voice
+        </button>
         <div class="checkRow">
           <input type="checkbox" id="allLangs" style="width: auto" /> Show all
-          voices (default: best English ones)
+          voices (default: Nigerian and British English only)
         </div>
         <div id="voiceHint"></div>
         <label for="rate">Reading speed</label>
@@ -697,6 +808,14 @@
         <div class="speedval">
           <span>0.5x</span><span id="rateVal">1.0x</span><span>2x</span>
         </div>
+      </div>
+
+      <div class="settingsCard">
+        <h4>Account</h4>
+        <div class="aboutText" id="acctEmail"></div>
+        <button class="payBtn" id="signOutBtn" style="margin: 10px 0 0">
+          Sign out
+        </button>
       </div>
 
       <div class="settingsCard">
@@ -745,9 +864,70 @@
         <h4>About</h4>
         <div class="aboutText">
           Narrately is a free resource — reads PDFs, Word docs, and text files
-          aloud right in your browser. No payment, no account required. Your
-          books stay on this device only.
+          aloud right in your browser. Free to use. Your books are saved to your
+          account so they follow you across devices.<br /><br />
+          Built in public.
+          <a
+            href="https://github.com/your-username/narratately"
+            target="_blank"
+            rel="noopener"
+            style="color: var(--accent-deep); font-weight: 600"
+            >View it on GitHub ↗</a
+          >
+          — a star there helps a lot if you find it useful.
         </div>
+      </div>
+    </div>
+
+    <div id="rateView" style="display: none">
+      <div class="sectionLabel">Rate your experience</div>
+      <div class="settingsCard">
+        <div class="aboutText" style="margin-bottom: 10px">
+          How is Narrately working for you?
+        </div>
+        <div class="stars" id="stars"></div>
+        <textarea
+          id="rateText"
+          class="rateBox"
+          rows="3"
+          placeholder="What would make it better? (optional)"
+        ></textarea>
+        <button class="payBtn" id="rateSend" style="margin: 10px 0 0">
+          Send rating
+        </button>
+        <div
+          id="rateStatus"
+          style="font-size: 12px; color: var(--muted); margin-top: 8px"
+        ></div>
+      </div>
+    </div>
+
+    <div id="rateGate">
+      <div class="gateCard">
+        <h3>How are we doing?</h3>
+        <p>
+          You've listened for a while — please rate your experience. It helps
+          make Narrately better.
+        </p>
+        <div class="stars" id="gateStars"></div>
+        <textarea
+          id="gateText"
+          class="rateBox"
+          rows="3"
+          placeholder="Anything we should fix or add? (optional)"
+        ></textarea>
+        <button class="payBtn" id="gateSend" style="margin: 10px 0 0">
+          Send rating
+        </button>
+        <div
+          id="gateRateStatus"
+          style="
+            font-size: 12px;
+            color: var(--muted);
+            text-align: center;
+            margin-top: 8px;
+          "
+        ></div>
       </div>
     </div>
 
@@ -771,6 +951,23 @@
               ></path></svg></span
           >Library
         </button>
+        <button class="tabBtn" id="navRate">
+          <span class="ic"
+            ><svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon
+                points="12 2 15.1 8.6 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.6"
+              ></polygon></svg></span
+          >Rate
+        </button>
         <button class="tabBtn" id="navSettings">
           <span class="ic"
             ><svg
@@ -793,6 +990,7 @@
     </div>
 
     <!-- pdf.js for PDF text extraction -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <!-- mammoth.js for DOCX text extraction -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -851,24 +1049,205 @@
           "light",
       );
 
-      // ---- WAITLIST GATE (Formspree) ----
-      // ⚠️ Sign up free at formspree.io, create a form, paste its endpoint below, then set GATE_ENABLED to true.
-      // Not required — Narrately is a free resource either way. This is optional, e.g. if you want an email list.
-      const GATE_ENABLED = true; // waitlist gate is ON — make sure FORMSPREE_ENDPOINT below is your real one first
-      const FORMSPREE_ENDPOINT = "https://formspree.io/f/mgavqdjo";
+      // ---- BACKEND (Supabase): accounts, cloud library, feedback ----
+      // Paste the two values from Supabase > Project Settings > API.
+      // (The anon key is meant to be public; the database rules in supabase-setup.sql protect each user's data.)
+      const SUPABASE_URL = "https://bokqmplxxovegvoiqwob.supabase.co";
+      const SUPABASE_ANON_KEY =
+        "sb_publishable_FgU8Ol3SkBYVDV1ydhSjfA_xhoWY2rQ";
+      const sb =
+        !SUPABASE_URL.includes("PASTE") && window.supabase
+          ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+          : null;
 
-      function hasJoinedWaitlist() {
-        return safeStorage(
-          () => localStorage.getItem("narrately_joined") === "true",
-          false,
+      let me = null;
+      let LIB = {};
+      let synced = new Set();
+      let syncedIdx = {};
+      const pending = new Set();
+      let idxTimer = null;
+
+      function esc(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
         );
       }
-      function setJoinedWaitlist() {
-        safeStorage(
-          () => localStorage.setItem("narrately_joined", "true"),
-          null,
-        );
+
+      // Same function names the rest of the app already uses.
+      function getLibrary() {
+        return LIB;
       }
+      function saveLibrary(lib) {
+        LIB = lib;
+        if (!sb || !me) return false;
+        for (const id of Object.keys(lib)) {
+          if (!synced.has(id) && !pending.has(id)) {
+            pending.add(id);
+            pushBook(id, lib[id]).finally(() => pending.delete(id));
+          } else if (synced.has(id) && (lib[id].idx || 0) !== syncedIdx[id]) {
+            clearTimeout(idxTimer);
+            idxTimer = setTimeout(flushIdx, 3000);
+          }
+        }
+        for (const id of [...synced]) {
+          if (!lib[id]) {
+            synced.delete(id);
+            sb.from("books")
+              .delete()
+              .eq("id", id)
+              .then(() => {});
+          }
+        }
+        return true;
+      }
+      async function pushBook(id, b) {
+        const { error } = await sb.from("books").upsert({
+          id,
+          title: b.title,
+          chunks: b.chunks,
+          idx: b.idx || 0,
+          added_at: b.addedAt || Date.now(),
+        });
+        if (error) {
+          statusEl.textContent =
+            "Could not save to your account: " + error.message;
+          return false;
+        }
+        synced.add(id);
+        syncedIdx[id] = b.idx || 0;
+        return true;
+      }
+      async function flushIdx() {
+        if (!sb || !me) return;
+        for (const id of Object.keys(LIB)) {
+          const v = LIB[id].idx || 0;
+          if (synced.has(id) && v !== syncedIdx[id]) {
+            syncedIdx[id] = v;
+            await sb.from("books").update({ idx: v }).eq("id", id);
+          }
+        }
+      }
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flushIdx();
+      });
+
+      async function loadCloudLibrary() {
+        const { data, error } = await sb
+          .from("books")
+          .select("id,title,chunks,idx,added_at")
+          .order("added_at", { ascending: false });
+        if (error) {
+          statusEl.textContent =
+            "Could not load your library: " + error.message;
+          return;
+        }
+        LIB = {};
+        synced = new Set();
+        syncedIdx = {};
+        data.forEach((r) => {
+          LIB[r.id] = {
+            title: r.title,
+            chunks: r.chunks,
+            idx: r.idx,
+            addedAt: r.added_at,
+          };
+          synced.add(r.id);
+          syncedIdx[r.id] = r.idx;
+        });
+        await importLocalBooks();
+      }
+
+      // Books testers added before accounts existed move into their account on first sign-in (local copy is kept).
+      async function importLocalBooks() {
+        const flag = "narrately_imported_" + me.id;
+        if (safeStorage(() => localStorage.getItem(flag), null)) return;
+        const local = safeStorage(
+          () => JSON.parse(localStorage.getItem("audiobook_library") || "{}"),
+          {},
+        );
+        const ids = Object.keys(local).filter((id) => !LIB[id]);
+        let n = 0;
+        for (const id of ids) {
+          LIB[id] = local[id];
+          if (await pushBook(id, local[id])) n++;
+          else delete LIB[id];
+        }
+        if (n === ids.length)
+          safeStorage(() => localStorage.setItem(flag, "1"), null);
+        if (n)
+          statusEl.textContent = `Moved ${n} book${n === 1 ? "" : "s"} from this device into your account.`;
+      }
+
+      // ---- SIGN IN / SIGN UP ----
+      let signUpMode = false;
+      const gateStatus = document.getElementById("gateStatus");
+      function setAuthMode(up) {
+        signUpMode = up;
+        document.getElementById("authTitle").textContent = up
+          ? "Create your account"
+          : "Sign in";
+        document.getElementById("authSubmit").textContent = up
+          ? "Create account"
+          : "Sign in";
+        document.getElementById("authToggle").textContent = up
+          ? "Have an account? Sign in"
+          : "New here? Create an account";
+        document.getElementById("authPass").autocomplete = up
+          ? "new-password"
+          : "current-password";
+        gateStatus.textContent = "";
+      }
+      document
+        .getElementById("authToggle")
+        .addEventListener("click", () => setAuthMode(!signUpMode));
+      document
+        .getElementById("authSubmit")
+        .addEventListener("click", async () => {
+          const email = document.getElementById("authEmail").value.trim();
+          const password = document.getElementById("authPass").value;
+          if (!sb) {
+            gateStatus.textContent =
+              "The backend isn't connected yet — add your Supabase URL and key in the code.";
+            return;
+          }
+          if (!email.includes("@") || password.length < 8) {
+            gateStatus.textContent =
+              "Enter a valid email and a password of at least 8 characters.";
+            return;
+          }
+          gateStatus.textContent = signUpMode
+            ? "Creating account..."
+            : "Signing in...";
+          const { data, error } = signUpMode
+            ? await sb.auth.signUp({ email, password })
+            : await sb.auth.signInWithPassword({ email, password });
+          if (error) {
+            gateStatus.textContent = error.message;
+          } else if (signUpMode && !data.session) {
+            gateStatus.textContent =
+              "Check your email to confirm your account, then sign in.";
+            setAuthMode(false);
+            gateStatus.textContent =
+              "Check your email to confirm your account, then sign in.";
+          }
+        });
+      document
+        .getElementById("signOutBtn")
+        .addEventListener("click", async () => {
+          isPlaying = false;
+          speechSynthesis.cancel();
+          await flushIdx();
+          await sb.auth.signOut();
+        });
+
       function setAppVisible(visible) {
         [".topbar", ".tabBar"].forEach((sel) => {
           const el = document.querySelector(sel);
@@ -879,56 +1258,39 @@
           : "flex";
         if (visible) showTab("library");
       }
-      function checkGate() {
-        if (!GATE_ENABLED || hasJoinedWaitlist()) {
+      async function onSession(session) {
+        if (session) {
+          if (me && me.id === session.user.id) return;
+          me = session.user;
+          gateStatus.textContent = "Loading your library...";
+          await loadCloudLibrary();
+          await loadRated();
+          document.getElementById("acctEmail").textContent =
+            "Signed in as " + me.email;
           setAppVisible(true);
+        } else {
+          me = null;
+          LIB = {};
+          synced = new Set();
+          syncedIdx = {};
+          gateStatus.textContent = "";
+          setAppVisible(false);
+        }
+      }
+      function initAuth() {
+        if (!sb) {
+          setAppVisible(false);
+          gateStatus.textContent =
+            "Backend not connected yet — add your Supabase URL and key in the code.";
           return;
         }
         setAppVisible(false);
+        sb.auth.onAuthStateChange((_evt, session) => {
+          setTimeout(() => onSession(session), 0);
+        });
       }
 
-      document
-        .getElementById("gateJoinBtn")
-        .addEventListener("click", async () => {
-          const name = document.getElementById("gateName").value.trim();
-          const email = document.getElementById("gateEmail").value.trim();
-          const statusEl2 = document.getElementById("gateStatus");
-          if (!email || !email.includes("@")) {
-            statusEl2.textContent = "Please enter a valid email.";
-            return;
-          }
-          if (FORMSPREE_ENDPOINT.includes("REPLACE_ME")) {
-            statusEl2.textContent =
-              "Waitlist isn't connected yet — add your Formspree endpoint in the code.";
-            return;
-          }
-          statusEl2.textContent = "Joining...";
-          try {
-            const res = await fetch(FORMSPREE_ENDPOINT, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-              body: JSON.stringify({ name, email }),
-            });
-            if (res.ok) {
-              setJoinedWaitlist();
-              setAppVisible(true);
-            } else {
-              statusEl2.textContent =
-                "Something went wrong — please try again.";
-            }
-          } catch (err) {
-            statusEl2.textContent =
-              "Network error — check your connection and try again.";
-          }
-        });
-
-      // ---- FEEDBACK (Formspree) ----
-      // ⚠️ Can reuse the same Formspree account — create a second form for feedback, paste its endpoint here.
-      const FEEDBACK_FORMSPREE_ENDPOINT = "https://formspree.io/f/mvkgyljr";
-
+      // ---- FEEDBACK (saved to your database, tied to the signed-in user) ----
       document
         .getElementById("feedbackBtn")
         .addEventListener("click", async () => {
@@ -938,33 +1300,13 @@
             fbStatus.textContent = "Type something first.";
             return;
           }
-          if (FEEDBACK_FORMSPREE_ENDPOINT.includes("REPLACE_ME")) {
-            fbStatus.textContent =
-              "Feedback isn't connected yet — add your Formspree endpoint in the code.";
-            return;
-          }
           fbStatus.textContent = "Sending...";
-          try {
-            const res = await fetch(FEEDBACK_FORMSPREE_ENDPOINT, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-              body: JSON.stringify({
-                message: msg,
-                page: "Narrately Settings",
-              }),
-            });
-            if (res.ok) {
-              fbStatus.textContent = "Thanks — got it!";
-              document.getElementById("feedbackText").value = "";
-            } else {
-              fbStatus.textContent = "Something went wrong — please try again.";
-            }
-          } catch (err) {
-            fbStatus.textContent =
-              "Network error — check your connection and try again.";
+          const { error } = await sb.from("feedback").insert({ message: msg });
+          if (error) {
+            fbStatus.textContent = "Something went wrong: " + error.message;
+          } else {
+            fbStatus.textContent = "Thanks — got it!";
+            document.getElementById("feedbackText").value = "";
           }
         });
 
@@ -975,6 +1317,11 @@
         document.getElementById("settingsView").style.display =
           tab === "settings" ? "block" : "none";
         document.getElementById("playerView").style.display = "none";
+        document.getElementById("rateView").style.display =
+          tab === "rate" ? "block" : "none";
+        document
+          .getElementById("navRate")
+          .classList.toggle("active", tab === "rate");
         document.querySelector(".tabBar").style.display = "flex";
         document
           .getElementById("navLibrary")
@@ -984,11 +1331,17 @@
           .classList.toggle("active", tab === "settings");
         document.querySelector(".topbar").style.display =
           tab === "library" ? "flex" : "none";
-        if (tab === "library") renderLibrary();
+        if (tab === "library") {
+          renderLibrary();
+          maybeAskRating();
+        }
       }
       document
         .getElementById("navLibrary")
         .addEventListener("click", () => showTab("library"));
+      document
+        .getElementById("navRate")
+        .addEventListener("click", () => showTab("rate"));
       document
         .getElementById("navSettings")
         .addEventListener("click", () => showTab("settings"));
@@ -1013,20 +1366,7 @@
         return `background: linear-gradient(145deg, ${c1}, ${c2});`;
       }
 
-      // ---- LIBRARY STORAGE ----
-      function getLibrary() {
-        return safeStorage(
-          () => JSON.parse(localStorage.getItem("audiobook_library") || "{}"),
-          {},
-        );
-      }
-      function saveLibrary(lib) {
-        return safeStorage(() => {
-          localStorage.setItem("audiobook_library", JSON.stringify(lib));
-          return true;
-        }, false);
-      }
-
+      // ---- LIBRARY STORAGE: see BACKEND section above ----
       function updateCapNote() {
         const lib = getLibrary();
         const count = Object.keys(lib).length;
@@ -1056,11 +1396,11 @@
           tile.className = "tile";
           tile.innerHTML = `
       <div class="cover" style="${coverStyle(b.title)}">
-        ${b.title.charAt(0).toUpperCase()}
+        ${esc(b.title.charAt(0).toUpperCase())}
         <button class="delX" data-id="${id}">${ICON_X}</button>
         <div class="bar" style="width:${pct}%"></div>
       </div>
-      <div class="tileTitle">${b.title}</div>
+      <div class="tileTitle">${esc(b.title)}</div>
       <div class="tileMeta">${pct}% listened</div>`;
           tile.querySelector(".cover").addEventListener("click", (e) => {
             if (e.target.closest(".delX")) return;
@@ -1172,44 +1512,67 @@
       ];
       function voiceScore(v) {
         const name = v.name.toLowerCase();
-        const lang = v.lang.toLowerCase();
+        const lang = v.lang.toLowerCase().replace("_", "-");
         let score = 0;
-        PREFERRED_VOICE_HINTS.forEach((hint, i) => {
-          if (name.includes(hint) || lang.includes(hint))
-            score += PREFERRED_VOICE_HINTS.length - i;
-        });
-        if (lang.startsWith("en-gb")) score += 50;
+        if (lang.startsWith("en-ng")) score += 200;
+        else if (lang.startsWith("en-gb")) score += 100;
         else if (lang.startsWith("en")) score += 10;
+        if (/natural|neural|premium|enhanced|online/.test(name)) score += 40;
+        PREFERRED_VOICE_HINTS.forEach((hint, i) => {
+          if (name.includes(hint)) score += PREFERRED_VOICE_HINTS.length - i;
+        });
         return score;
+      }
+      function voiceGroup(v) {
+        const lang = v.lang.toLowerCase().replace("_", "-");
+        if (lang.startsWith("en-ng")) return "Nigerian English";
+        if (lang.startsWith("en-gb")) return "British English";
+        return lang.startsWith("en") ? "Other English" : "Other languages";
       }
 
       let allVoices = [];
       function renderVoiceOptions() {
         const showAll = document.getElementById("allLangs").checked;
-        const filtered = showAll
-          ? allVoices.slice()
-          : allVoices.filter((v) => v.lang.toLowerCase().startsWith("en"));
-        const list = (filtered.length ? filtered : allVoices.slice()).sort(
-          (a, b) => voiceScore(b) - voiceScore(a),
-        );
-        voiceSelect.innerHTML = "";
-        list.forEach((v) => {
-          const opt = document.createElement("option");
-          opt.value = v.__idx;
-          opt.textContent = `${v.name} (${v.lang})`;
-          voiceSelect.appendChild(opt);
+        let list = allVoices.filter((v) => {
+          const g = voiceGroup(v);
+          return showAll || g === "Nigerian English" || g === "British English";
         });
-        document.getElementById("voiceHint").textContent =
-          `${list.length} voice${list.length === 1 ? "" : "s"} — sorted to put clearer British/natural-sounding voices first. For better iPhone voices: Settings > Accessibility > Spoken Content > Voices.`;
+        if (!list.length)
+          list = allVoices.filter((v) => v.lang.toLowerCase().startsWith("en"));
+        if (!list.length) list = allVoices.slice();
+        list.sort((x, y) => voiceScore(y) - voiceScore(x));
+        voiceSelect.innerHTML = "";
+        [
+          "Nigerian English",
+          "British English",
+          "Other English",
+          "Other languages",
+        ].forEach((g) => {
+          const items = list.filter((v) => voiceGroup(v) === g);
+          if (!items.length) return;
+          const og = document.createElement("optgroup");
+          og.label = g;
+          items.forEach((v) => {
+            const opt = document.createElement("option");
+            opt.value = v.__idx;
+            opt.textContent = `${v.name} (${v.lang})`;
+            og.appendChild(opt);
+          });
+          voiceSelect.appendChild(og);
+        });
+        const hasNg = allVoices.some(
+          (v) => voiceGroup(v) === "Nigerian English",
+        );
+        document.getElementById("voiceHint").textContent = hasNg
+          ? `${list.length} voices — Nigerian and British English listed first.`
+          : `${list.length} voices — British English listed first. No Nigerian English voice found on this device. Android: Settings > System > Languages > Text-to-speech > Google > Install voice data > English (Nigeria). Windows/Edge also has Nigerian voices.`;
         const saved = safeStorage(
           () => localStorage.getItem("audiobook_voice"),
           null,
         );
-        if (saved !== null && list.some((v) => String(v.__idx) === saved)) {
+        if (saved !== null && list.some((v) => String(v.__idx) === saved))
           voiceSelect.value = saved;
-        } else if (list.length) {
-          voiceSelect.value = list[0].__idx;
-        }
+        else if (list.length) voiceSelect.value = list[0].__idx;
       }
       function populateVoices() {
         const voices = speechSynthesis.getVoices();
@@ -1249,6 +1612,17 @@
         );
       });
 
+      document.getElementById("voiceTest").addEventListener("click", () => {
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(
+          "Hello, this is how your book will sound.",
+        );
+        const v = speechSynthesis.getVoices()[voiceSelect.value];
+        if (v) u.voice = v;
+        u.rate = parseFloat(rateInput.value);
+        speechSynthesis.speak(u);
+      });
+
       // ---- WAKE LOCK (keep screen on while playing, to reduce background interruption) ----
       async function requestWakeLock() {
         if (!("wakeLock" in navigator)) return;
@@ -1271,7 +1645,28 @@
       });
 
       // ---- PLAYBACK ----
+      function renderRead(cs = -1, ce = -1) {
+        const box = document.getElementById("readView");
+        if (!box || !chunks.length) return;
+        const from = Math.max(0, idx - 2),
+          to = Math.min(chunks.length, idx + 10);
+        let h = "";
+        for (let i = from; i < to; i++) {
+          const t = chunks[i];
+          if (i === idx && cs >= 0)
+            h += `<span class="cur" data-i="${i}">${esc(t.slice(0, cs))}<mark>${esc(t.slice(cs, ce))}</mark>${esc(t.slice(ce))}</span> `;
+          else
+            h += `<span${i === idx ? ' class="cur"' : ""} data-i="${i}">${esc(t)}</span> `;
+        }
+        box.innerHTML = h;
+      }
+      document.getElementById("readView").addEventListener("click", (e) => {
+        const sp = e.target.closest("[data-i]");
+        if (sp) jumpTo(Number(sp.dataset.i));
+      });
+
       function showChunk() {
+        renderRead();
         document.getElementById("nowMeta").textContent =
           `Part ${idx + 1} of ${chunks.length}`;
         const pct = chunks.length ? (idx / (chunks.length - 1 || 1)) * 100 : 0;
@@ -1310,6 +1705,7 @@
         );
       }
 
+      let playToken = 0;
       function speakCurrent() {
         if (idx >= chunks.length) {
           isPlaying = false;
@@ -1324,8 +1720,17 @@
         const v = voices[voiceSelect.value];
         if (v) utter.voice = v;
         utter.rate = parseFloat(rateInput.value);
+        const myTurn = ++playToken;
+        utter.onboundary = (e) => {
+          if (myTurn !== playToken || !isPlaying) return;
+          const t = chunks[idx];
+          let end = t.indexOf(" ", e.charIndex);
+          if (end < 0) end = t.length;
+          renderRead(e.charIndex, end);
+        };
         utter.onend = () => {
-          if (isPlaying) {
+          if (isPlaying && myTurn === playToken) {
+            bumpParts();
             idx++;
             speakCurrent();
           }
@@ -1355,20 +1760,51 @@
         updateMediaSession();
         releaseWakeLock();
       });
-      prevBtn.addEventListener("click", () => {
-        isPlaying = false;
+      function jumpTo(n) {
+        const was = isPlaying;
         speechSynthesis.cancel();
-        playBtn.innerHTML = ICON_PLAY;
-        idx = Math.max(0, idx - 1);
-        showChunk();
+        idx = Math.max(0, Math.min(chunks.length - 1, n));
+        if (was) speakCurrent();
+        else showChunk();
+      }
+      // Browser speech has no real timeline, so time skips are estimated from text length (about 14 characters per second at 1x).
+      function skipSeconds(sec) {
+        const rate = parseFloat(rateInput.value) || 1;
+        const dir = sec < 0 ? -1 : 1;
+        let left = Math.abs(sec),
+          i = idx;
+        while (left > 0 && i + dir >= 0 && i + dir < chunks.length) {
+          i += dir;
+          left -= chunks[i].length / (14 * rate);
+        }
+        jumpTo(i);
+      }
+      prevBtn.addEventListener("click", () => jumpTo(idx - 1));
+      nextBtn.addEventListener("click", () => jumpTo(idx + 1));
+      document
+        .querySelectorAll(".skipRow button")
+        .forEach((btn) =>
+          btn.addEventListener("click", () =>
+            skipSeconds(Number(btn.dataset.sec)),
+          ),
+        );
+      // Changing voice or speed takes effect straight away.
+      voiceSelect.addEventListener("change", () => {
+        if (isPlaying) jumpTo(idx);
       });
-      nextBtn.addEventListener("click", () => {
-        isPlaying = false;
-        speechSynthesis.cancel();
-        playBtn.innerHTML = ICON_PLAY;
-        idx = Math.min(chunks.length - 1, idx + 1);
-        showChunk();
+      rateInput.addEventListener("change", () => {
+        if (isPlaying) jumpTo(idx);
       });
+      if ("mediaSession" in navigator) {
+        try {
+          navigator.mediaSession.setActionHandler("seekbackward", () =>
+            skipSeconds(-10),
+          );
+          navigator.mediaSession.setActionHandler("seekforward", () =>
+            skipSeconds(10),
+          );
+        } catch (e) {}
+      }
       scrub.addEventListener("change", () => {
         isPlaying = false;
         speechSynthesis.cancel();
@@ -1420,7 +1856,81 @@
           }
         });
 
-      checkGate();
+      // ---- RATE YOUR EXPERIENCE ----
+      let hasRated = false;
+      const partsKey = () => "narrately_parts_" + (me ? me.id : "x");
+      function bumpParts() {
+        safeStorage(
+          () =>
+            localStorage.setItem(
+              partsKey(),
+              String((Number(localStorage.getItem(partsKey())) || 0) + 1),
+            ),
+          null,
+        );
+      }
+      async function loadRated() {
+        const { data } = await sb.from("ratings").select("id").limit(1);
+        hasRated = !!(data && data.length);
+      }
+      function mountRater(starsEl, textEl, btn, statusEl, onDone) {
+        let stars = 0;
+        for (let n = 1; n <= 5; n++) {
+          const b = document.createElement("button");
+          b.textContent = "★";
+          b.setAttribute("aria-label", n + " star" + (n > 1 ? "s" : ""));
+          b.addEventListener("click", () => {
+            stars = n;
+            [...starsEl.children].forEach((c, i) =>
+              c.classList.toggle("on", i < n),
+            );
+          });
+          starsEl.appendChild(b);
+        }
+        btn.addEventListener("click", async () => {
+          if (!stars) {
+            statusEl.textContent = "Tap a star rating first.";
+            return;
+          }
+          statusEl.textContent = "Sending...";
+          const { error } = await sb
+            .from("ratings")
+            .insert({ stars, comment: textEl.value.trim() || null });
+          if (error) {
+            statusEl.textContent = "Something went wrong: " + error.message;
+            return;
+          }
+          hasRated = true;
+          statusEl.textContent = "Thank you!";
+          textEl.value = "";
+          onDone();
+        });
+      }
+      mountRater(
+        document.getElementById("stars"),
+        document.getElementById("rateText"),
+        document.getElementById("rateSend"),
+        document.getElementById("rateStatus"),
+        () => {},
+      );
+      mountRater(
+        document.getElementById("gateStars"),
+        document.getElementById("gateText"),
+        document.getElementById("gateSend"),
+        document.getElementById("gateRateStatus"),
+        () => {
+          document.getElementById("rateGate").style.display = "none";
+        },
+      );
+      // One required rating, shown after about 20 listened parts, when the person returns to the library (never mid-listening).
+      function maybeAskRating() {
+        if (!sb || !me || hasRated) return;
+        const n =
+          Number(safeStorage(() => localStorage.getItem(partsKey()), 0)) || 0;
+        if (n >= 20) document.getElementById("rateGate").style.display = "flex";
+      }
+
+      initAuth();
     </script>
 
     <!-- GoatCounter: free, privacy-friendly visitor analytics. Sign up free at goatcounter.com,
