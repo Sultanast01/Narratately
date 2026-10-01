@@ -553,7 +553,9 @@
         <div class="wordmark">Narrately</div>
         <div class="tag">Any document, read aloud.</div>
       </div>
-      <label class="addBtn" for="fileInput">+ Add book</label>
+      <label class="addBtn" for="fileInput" data-goatcounter-click="add-book"
+        >+ Add book</label
+      >
       <input type="file" id="fileInput" accept=".pdf,.docx,.txt" />
     </div>
 
@@ -852,7 +854,7 @@
       // ---- WAITLIST GATE (Formspree) ----
       // ⚠️ Sign up free at formspree.io, create a form, paste its endpoint below, then set GATE_ENABLED to true.
       // Not required — Narrately is a free resource either way. This is optional, e.g. if you want an email list.
-      const GATE_ENABLED = false; // flip to true once FORMSPREE_ENDPOINT is set
+      const GATE_ENABLED = true; // waitlist gate is ON — make sure FORMSPREE_ENDPOINT below is your real one first
       const FORMSPREE_ENDPOINT = "https://formspree.io/f/mgavqdjo";
 
       function hasJoinedWaitlist() {
@@ -1420,5 +1422,13 @@
 
       checkGate();
     </script>
+
+    <!-- GoatCounter: free, privacy-friendly visitor analytics. Sign up free at goatcounter.com,
+     then replace YOURCODE below with your own site code (no credit card needed). -->
+    <script
+      data-goatcounter="https://YOURCODE.goatcounter.com/count"
+      async
+      src="//gc.zgo.at/count.js"
+    ></script>
   </body>
 </html>
