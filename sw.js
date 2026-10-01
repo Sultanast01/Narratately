@@ -1,51 +1,25 @@
-const CACHE_NAME = "narrately-shell-v1";
-const APP_SHELL = [
-  "/Narrately/",
-  "/Narrately/index.html",
-  "/Narrately/manifest.json",
-  "/Narrately/icon-192.png",
-  "/Narrately/icon-512.png"
-];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
-  );
-  self.skipWaiting();
+// Narrately service worker: always tries the network first so updates reach everyone, falls back to the cache offline.
+const CACHE = "narrately-v1";
+const SHELL = ["./", "index.html", "manifest.json", "icon-192.png", "icon-512.png"];
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key.startsWith("narrately-shell-") && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    )
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  const url = new URL(request.url);
-
-  // Only handle Narrately's own files. Supabase and external CDN requests
-  // continue to use the network exactly as they did before.
-  if (url.origin !== self.location.origin) return;
-
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request).then((response) => {
-        if (response.ok && request.method === "GET") {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-        }
-        return response;
-      });
-    })
+self.addEventListener("fetch", (e) => {
+  const req = e.request;
+  if (req.method !== "GET") return;
+  if (new URL(req.url).origin !== location.origin) return; // never touch Supabase or CDN requests
+  e.respondWith(
+    fetch(req)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+        return res;
+      })
+      .catch(() => caches.match(req).then((m) => m || caches.match("index.html"))),
   );
 });

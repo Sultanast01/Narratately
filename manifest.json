@@ -1,17 +1,30 @@
 {
   "name": "Narrately",
   "short_name": "Narrately",
-  "start_url": "/Narrately/",
+  "description": "Any document, read aloud.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#dc9a3c",
+  "background_color": "#14120e",
+  "theme_color": "#14120e",
   "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ],
-  "scope": "/Narrately/",
-  "description": "A personal audiobook reader for PDF, DOCX and TXT files."
+  ]
 }
