@@ -4,7 +4,7 @@
 
 Narrately turns PDFs, Word docs, and text files into something you can listen to instead of read. No installs, no sign-up required to try it, no payment. Open the link, upload a file, hit play.
 
-🔗 **Live app:** ([https://your-username.github.io/narratately/](https://sultanast01.github.io/Narrately/))
+🔗 **Live app:** (([https://sultanast01.github.io/Narrately/]))
 
 ⭐ **If you find this useful, a star on this repo goes a long way** — it's the easiest way to show support and helps others discover it too.
 
